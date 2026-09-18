@@ -25,7 +25,7 @@ WORKFLOW Check location and lead SMS:
                 DO send an SMS with body equal to $LOCATION_CODE
             ELSE:
                 NOTE in the current spreadsheet row: Lead SMS card is missing
-                STOP WORKFLOW
+                STOP THIS WORKFLOW
         ELSE:
             NOTE in the current spreadsheet row: LOCATION SMS card is missing or not enabled
-            STOP WORKFLOW
+            STOP THIS WORKFLOW

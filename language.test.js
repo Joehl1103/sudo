@@ -62,12 +62,13 @@ describe('Workflow checks', () => {
 
     test('makes stop scope explicit and requires a loop for STOP RECORD', () => {
         assert.ok(errorCodes(workflow('    STOP')).includes('stop-scope'));
+        assert.ok(errorCodes(workflow('    STOP WORKFLOW')).includes('stop-scope'));
         assert.ok(errorCodes(workflow('    STOP RECORD')).includes('record-outside-loop'));
-        assert.deepEqual(errorCodes(workflow('    STOP WORKFLOW')), []);
+        assert.deepEqual(errorCodes(workflow('    STOP THIS WORKFLOW')), []);
     });
 
     test('warns about vague conditions and directly unreachable actions', () => {
-        const source = workflow('    IF THIS IS TRUE:', '        STOP WORKFLOW', '        DO send SMS');
+        const source = workflow('    IF THIS IS TRUE:', '        STOP THIS WORKFLOW', '        DO send SMS');
         const warnings = analyze(source).diagnostics.filter(item => item.severity === 'warning');
         assert.ok(warnings.some(item => item.code === 'vague-condition'));
         assert.ok(warnings.some(item => item.code === 'unreachable'));

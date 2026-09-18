@@ -39,8 +39,8 @@ function parseStatement(line, diagnostics) {
         }
     } else if (keyword === 'STOP') {
         body = body.toUpperCase();
-        if (body !== 'RECORD' && body !== 'WORKFLOW') {
-            report(diagnostics, line, 'stop-scope', 'Choose STOP RECORD or STOP WORKFLOW.');
+        if (body !== 'RECORD' && body !== 'THIS WORKFLOW') {
+            report(diagnostics, line, 'stop-scope', 'Choose STOP RECORD or STOP THIS WORKFLOW.');
         }
     } else if (body === '') {
         report(diagnostics, line, 'missing-text', `${keyword} needs descriptive text.`);

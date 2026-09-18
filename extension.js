@@ -14,7 +14,7 @@ const SNIPPETS = [
     ['USING', 'USING ${1:tool or approach}', 'Describe the tools or working approach.'],
     ['NOTE', 'NOTE ${1:destination and message}', 'Describe what should be recorded and where.'],
     ['STOP RECORD', 'STOP RECORD', 'Stop this record and continue with the next record in the nearest loop.'],
-    ['STOP WORKFLOW', 'STOP WORKFLOW', 'Stop the entire workflow.'],
+    ['STOP THIS WORKFLOW', 'STOP THIS WORKFLOW', 'Stop the one workflow defined by this file.'],
 ];
 
 // Translate the shared one-based diagnostic positions to editor ranges.

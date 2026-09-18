@@ -77,7 +77,7 @@ Formatting prints to stdout unless `--write` is provided. Use `-` as the filenam
 | `ELSE:` | Alternative immediately after IF, at the same indentation |
 | `NOTE destination and message` | Describe what to record and where |
 | `STOP RECORD` | End this iteration of the nearest loop; continue with its next record |
-| `STOP WORKFLOW` | End the entire workflow |
+| `STOP THIS WORKFLOW` | End the one workflow defined by this file |
 | `# comment` | Whole-line comment; ignored structurally |
 
 Block headers require a trailing colon and at least one indented statement. Any consistent space indentation is accepted; formatting uses four spaces per level. Tabs are rejected. Keywords are case-insensitive and formatted uppercase. All actions and conditions fit on one line in v0. Inline comments, ELSE IF, functions, variable reassignment, and multiline continuations are not defined yet.
