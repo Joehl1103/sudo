@@ -63,6 +63,12 @@ node cli.js format examples/playground.workflow --write
 
 Formatting prints to stdout unless `--write` is provided. Use `-` as the filename to read stdin, and `lint - --json` for structured editor diagnostics. `format - --write` is rejected. Exit codes: 0 = success (warnings allowed), 1 = syntax errors, 2 = usage/filesystem error. `npm run lint -- <file>` and `npm run format -- <file>` are shortcuts.
 
+## Plan a workflow with an agent
+
+The repository ships a project skill at `.agents/skills/workflow-planner`. Agents that discover project skills can invoke `$workflow-planner` with a `.workflow` file to lint its structure and build their own grounded execution plan from its loops, branches, notes, and stop conditions.
+
+The skill treats a workflow as source material, not executable code or authorization. It plans both decision branches, surfaces missing inputs and permissions, and does not carry out actions when the request is only to plan.
+
 ## Syntax v0
 
 | Form | Meaning |
@@ -92,6 +98,7 @@ The full SMS example preserves the provided workflow as a draft. Comments expose
 
 - `language.js`: recognized statements, indentation tree, checks, and formatter. Both CLI and editor use it.
 - `language.test.js`: intended behavior; start here when changing syntax.
+- `.agents/skills/workflow-planner`: repository skill that translates authored workflows into agent-owned plans.
 - `extension.js`: live diagnostics, formatting, and completion.
 - `cli.js` / `cli.test.js`: terminal behavior.
 - `nvim/workflow.lua` / `nvim/test.lua`: Neovim plugin and real headless editor integration tests.

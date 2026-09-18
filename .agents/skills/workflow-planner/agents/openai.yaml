@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workflow Planner"
+  short_description: "Turn .workflow files into grounded plans"
+  default_prompt: "Use $workflow-planner to read the referenced .workflow file and build a safe execution plan from it."

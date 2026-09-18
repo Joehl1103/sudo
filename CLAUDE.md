@@ -5,6 +5,7 @@ This is Joseph's own language experiment. Indentation defines blocks like Python
 ## Projects and Tasks
 
 - Current: v0 structural linter, formatter, CLI, Neovim plugin, and optional VS Code extension. `@WORKFLOW:` declares the file's single global workflow object; DEFINE and FOR EACH declare scoped `$UPPERCASE` local values. Joseph uses Neovim; keep it the primary editor.
+- The repository-local `.agents/skills/workflow-planner` skill teaches agents to lint a `.workflow` file and derive an execution plan without treating the file as authorization.
 - Future syntax choices remain experimental. Do not add execution, external integrations, or an LLM dependency without a request.
 - Start with README.md and language.test.js. The shared parser is language.js; the editor and CLI delegate to it.
 - Run npm test for parser/formatter/CLI changes and npm run test:nvim for the Neovim integration. Run editor.test.js in a VS Code extension host for VS Code changes; the command is in README.md.
