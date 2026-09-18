@@ -112,12 +112,14 @@ local function attach(buffer)
             syntax match WorkflowKeyword /^\s*\zs\%(WORKFLOW\|FOR\s\+EACH\|DEFINE\|WHERE\|IF\|ELSE\|DO\|THEN\|USING\|NOTE\|STOP\)\>/
             syntax match WorkflowOperator /\<\%(AND\|OR\|NOT\|IN\)\>\|===\|==\|!=/
             syntax case match
+            syntax match WorkflowSymbol /\%(^\|[^A-Za-z0-9._%+-]\)\zs@[A-Z][A-Z0-9_]*/
             syntax match WorkflowVariable /\$[A-Z][A-Z0-9_]*/
             syntax region WorkflowString start=/"/ skip=/\\"/ end=/"/ oneline
             syntax match WorkflowUrl /https\?:\/\/\S\+/
             syntax match WorkflowComment /^\s*#.*/
             highlight default link WorkflowKeyword Keyword
             highlight default link WorkflowOperator Operator
+            highlight default link WorkflowSymbol Function
             highlight default link WorkflowVariable Identifier
             highlight default link WorkflowString String
             highlight default link WorkflowUrl Underlined

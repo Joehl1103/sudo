@@ -3,7 +3,7 @@
 An experimental language for writing instructions to agents. You define the language as you try it. Indentation defines blocks like Python. This version provides syntax checking and formatting, with no compiler or executor.
 
 ```text
-WORKFLOW Check items:
+WORKFLOW @CHECK_ITEMS:
     DEFINE $SOURCE AS my list
     FOR EACH $ITEM IN $SOURCE:
         WHERE $ITEM needs attention
@@ -67,7 +67,7 @@ Formatting prints to stdout unless `--write` is provided. Use `-` as the filenam
 
 | Form | Meaning |
 | --- | --- |
-| `WORKFLOW name:` | One named workflow per file, in column 1 |
+| `WORKFLOW @NAME:` | Declare the one file-wide workflow symbol, in column 1 |
 | `USING approach` | A tool or working instruction |
 | `DEFINE $NAME AS description` | Give a descriptive value a reusable name |
 | `FOR EACH $RECORD IN source:` | A loop whose record variable exists inside the loop |
@@ -77,14 +77,14 @@ Formatting prints to stdout unless `--write` is provided. Use `-` as the filenam
 | `ELSE:` | Alternative immediately after IF, at the same indentation |
 | `NOTE destination and message` | Describe what to record and where |
 | `STOP RECORD` | End this iteration of the nearest loop; continue with its next record |
-| `STOP THIS WORKFLOW` | End the one workflow defined by this file |
+| `STOP @NAME` | End the workflow whose symbol matches the file header |
 | `# comment` | Whole-line comment; ignored structurally |
 
 Block headers require a trailing colon and at least one indented statement. Any consistent space indentation is accepted; formatting uses four spaces per level. Tabs are rejected. Keywords are case-insensitive and formatted uppercase. All actions and conditions fit on one line in v0. Inline comments, ELSE IF, functions, variable reassignment, and multiline continuations are not defined yet.
 
-Variable names use `$` followed by uppercase letters, numbers, or underscores. A definition becomes available after its line in the current indentation block and all nested blocks. Loop variables exist only inside their loop. Undefined, duplicate, out-of-scope, and lowercase variable names are errors; unused variables are warnings.
+The workflow header declares one global `@UPPERCASE_NAME`. Every downstream `@NAME` reference must match it, which visibly links instructions back to the workflow stored by the file. `$UPPERCASE_NAMES` identify local values instead. A variable definition becomes available after its line in the current indentation block and all nested blocks. Loop variables exist only inside their loop. Undefined, duplicate, out-of-scope, and lowercase names are errors; unused local variables are warnings.
 
-Only variable references, keywords, and structure are checked. Everything else after DEFINE, DO, THEN, USING, NOTE, WHERE, and IF is natural-language text. Descriptions such as `$RECORD's Location Code value` communicate intent to a reader or agent; they are **not evaluated** in v0. Names, column spellings, URLs, quotes, predicate truth, contradictory instructions, and SMS recipients are not validated. Syntax-valid does not mean ready to execute.
+Only workflow references, variable references, keywords, and structure are checked. Everything else after DEFINE, DO, THEN, USING, NOTE, WHERE, and IF is natural-language text. Descriptions such as `$RECORD's Location Code value` communicate intent to a reader or agent; they are **not evaluated** in v0. Column spellings, URLs, quotes, predicate truth, contradictory instructions, and SMS recipients are not validated. Syntax-valid does not mean ready to execute.
 
 The full SMS example preserves the provided workflow as a draft. Comments expose its unresolved assumptions: stopping the whole batch, the failure-note column, and the source column spelling. It uses the row's location-code value as the SMS body. No spreadsheet or HubSpot instance was accessed.
 

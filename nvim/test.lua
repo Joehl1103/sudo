@@ -16,7 +16,7 @@ local function run()
     check(vim.bo[buffer].shiftwidth == 4 and vim.bo[buffer].expandtab, 'Uses four-space indentation')
 
     vim.api.nvim_buf_set_lines(buffer, 0, -1, false, {
-        'WORKFLOW Example:', '    ELSE:', '        DO inspect',
+        'WORKFLOW @EXAMPLE:', '    ELSE:', '        DO inspect',
     })
     vim.cmd.WorkflowLint()
     local found_error = vim.wait(5000, function()
@@ -34,7 +34,7 @@ local function run()
     vim.cmd.WorkflowFormat()
     check(vim.deep_equal(original, vim.api.nvim_buf_get_lines(buffer, 0, -1, false)), 'Refuses to format invalid documents')
 
-    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'workflow Example:', '  do inspect' })
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'workflow @EXAMPLE:', '  do inspect' })
     -- Trigger the actual live-edit event rather than calling the linter directly.
     vim.api.nvim_exec_autocmds('TextChanged', { buffer = buffer })
     local cleared = vim.wait(5000, function()
@@ -44,24 +44,26 @@ local function run()
 
     vim.cmd.WorkflowFormat()
     check(vim.deep_equal(vim.api.nvim_buf_get_lines(buffer, 0, -1, false), {
-        'WORKFLOW Example:', '    DO inspect',
+        'WORKFLOW @EXAMPLE:', '    DO inspect',
     }), 'Formatting changes the buffer to canonical syntax')
 
     local disk_lines = vim.fn.readfile(project_directory .. '/examples/playground.workflow')
-    check(disk_lines[2] == 'WORKFLOW My experiment:', 'Formatting does not save the buffer automatically')
+    check(disk_lines[2] == 'WORKFLOW @MY_EXPERIMENT:', 'Formatting does not save the buffer automatically')
     local syntax_name = vim.fn.synIDattr(vim.fn.synID(1, 1, 1), 'name')
     check(syntax_name == 'WorkflowKeyword', 'Highlights structural keywords')
 
     vim.api.nvim_buf_set_lines(buffer, 0, -1, false, {
-        'WORKFLOW Example:', '    DEFINE $MESSAGE AS the message body', '    DO send $MESSAGE',
+        'WORKFLOW @EXAMPLE:', '    DEFINE $MESSAGE AS the message body', '    DO send $MESSAGE',
     })
+    local workflow_syntax_name = vim.fn.synIDattr(vim.fn.synID(1, 10, 1), 'name')
+    check(workflow_syntax_name == 'WorkflowSymbol', 'Highlights the global workflow symbol')
     local variable_syntax_name = vim.fn.synIDattr(vim.fn.synID(2, 12, 1), 'name')
     check(variable_syntax_name == 'WorkflowVariable', 'Highlights variable references')
 
     -- An older in-flight lint result must never replace the newer buffer state.
-    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'WORKFLOW Example:', '    ELSE:', '        DO inspect' })
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'WORKFLOW @EXAMPLE:', '    ELSE:', '        DO inspect' })
     vim.cmd.WorkflowLint()
-    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'WORKFLOW Example:', '    DO inspect' })
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'WORKFLOW @EXAMPLE:', '    DO inspect' })
     vim.cmd.WorkflowLint()
     vim.wait(500, function() return false end, 20)
     check(#vim.diagnostic.get(buffer, { namespace = plugin.namespace }) == 0, 'Discards stale diagnostic results after further edits')

@@ -2,6 +2,8 @@ const BLOCK_KEYWORDS = new Set(['WORKFLOW', 'FOR EACH', 'IF', 'ELSE']);
 const KEYWORD_PATTERN = /^(FOR\s+EACH|WORKFLOW|DEFINE|USING|WHERE|DO|THEN|IF|ELSE|NOTE|STOP)(?=\s|:|$)/i;
 const VARIABLE_REFERENCE_PATTERN = /\$[A-Za-z][A-Za-z0-9_]*/g;
 const VALID_VARIABLE_NAME_PATTERN = /^\$[A-Z][A-Z0-9_]*$/;
+const WORKFLOW_REFERENCE_PATTERN = /(?:^|[^A-Za-z0-9._%+-])(@[A-Za-z][A-Za-z0-9_]*)/g;
+const VALID_WORKFLOW_NAME_PATTERN = /^@[A-Z][A-Z0-9_]*$/;
 
 // Diagnostics use one-based positions so the CLI and editor share one contract.
 function report(diagnostics, line, code, message, severity = 'error') {
@@ -38,16 +40,27 @@ function parseStatement(line, diagnostics) {
             report(diagnostics, line, 'else-text', 'Write ELSE: without a condition. Nest another IF inside it if needed.');
         }
     } else if (keyword === 'STOP') {
-        body = body.toUpperCase();
-        if (body !== 'RECORD' && body !== 'THIS WORKFLOW') {
-            report(diagnostics, line, 'stop-scope', 'Choose STOP RECORD or STOP THIS WORKFLOW.');
+        if (/^RECORD$/i.test(body)) {
+            body = 'RECORD';
+        } else if (!/^@[A-Za-z][A-Za-z0-9_]*$/.test(body)) {
+            report(diagnostics, line, 'stop-scope', 'Choose STOP RECORD or STOP @WORKFLOW_NAME.');
         }
     } else if (body === '') {
         report(diagnostics, line, 'missing-text', `${keyword} needs descriptive text.`);
     }
 
     let declaredVariable = null;
+    let declaredWorkflow = null;
     let referencedText = body;
+    if (keyword === 'WORKFLOW') {
+        if (!/^@[A-Za-z][A-Za-z0-9_]*$/.test(body)) {
+            report(diagnostics, line, 'invalid-workflow-name', 'Write WORKFLOW @UPPERCASE_NAME:');
+        } else {
+            declaredWorkflow = body;
+        }
+        referencedText = '';
+    }
+
     if (keyword === 'DEFINE') {
         const definition = body.match(/^(\$[A-Za-z][A-Za-z0-9_]*)\s+AS\s+(.+)$/i);
         if (!definition) {
@@ -76,7 +89,49 @@ function parseStatement(line, diagnostics) {
         report(diagnostics, line, 'vague-condition', 'Name the condition so its meaning survives edits.', 'warning');
     }
 
-    return { ...line, keyword, body, block, declaredVariable, referencedText, children: [] };
+    return { ...line, keyword, body, block, declaredVariable, declaredWorkflow, referencedText, children: [] };
+}
+
+// The @ prefix identifies the one file-wide workflow rather than a local value.
+function checkWorkflowName(node, name, diagnostics) {
+    if (VALID_WORKFLOW_NAME_PATTERN.test(name)) {
+        return true;
+    }
+
+    report(diagnostics, node, 'invalid-workflow-name', `${name} must use uppercase letters, numbers, and underscores.`);
+    return false;
+}
+
+// Ignore @ inside email addresses while collecting explicit workflow references.
+function workflowReferences(text) {
+    const references = [];
+    const matches = text.matchAll(WORKFLOW_REFERENCE_PATTERN);
+
+    for (const match of matches) {
+        references.push(match[1]);
+    }
+
+    return references;
+}
+
+// Every @ reference must point to the workflow declared at the top of the file.
+function checkWorkflowReferences(nodes, declaredWorkflow, diagnostics) {
+    for (const node of nodes) {
+        const referencedText = node.referencedText || '';
+        const references = new Set(workflowReferences(referencedText));
+
+        for (const name of references) {
+            if (!checkWorkflowName(node, name, diagnostics)) {
+                continue;
+            }
+
+            if (name !== declaredWorkflow) {
+                report(diagnostics, node, 'undefined-workflow', `${name} does not match the workflow declared at the top of this file.`);
+            }
+        }
+
+        checkWorkflowReferences(node.children, declaredWorkflow, diagnostics);
+    }
 }
 
 // Variable names stay visually distinct from prose and consistent across files.
@@ -261,10 +316,19 @@ function analyze(source) {
     const workflows = roots.filter(node => node.keyword === 'WORKFLOW');
     const firstLine = { number: 1, indent: 0 };
     if (workflows.length === 0) {
-        report(diagnostics, firstLine, 'workflow-required', 'Start the document with WORKFLOW name:');
+        report(diagnostics, firstLine, 'workflow-required', 'Start the document with WORKFLOW @UPPERCASE_NAME:');
     } else if (workflows.length > 1) {
         report(diagnostics, workflows[1], 'workflow-count', 'Use one WORKFLOW per file.');
     }
+
+    let declaredWorkflow = null;
+    if (workflows.length > 0 && workflows[0].declaredWorkflow) {
+        const workflow = workflows[0];
+        if (checkWorkflowName(workflow, workflow.declaredWorkflow, diagnostics)) {
+            declaredWorkflow = workflow.declaredWorkflow;
+        }
+    }
+    checkWorkflowReferences(roots, declaredWorkflow, diagnostics);
 
     const declarations = new Map();
     checkVariables(roots, new Map(), declarations, diagnostics);

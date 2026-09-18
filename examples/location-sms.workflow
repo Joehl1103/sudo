@@ -2,7 +2,7 @@
 # Draft assumption: STOP means stop the entire workflow on the first failure.
 # Failure destination is described as the current spreadsheet row; choose its column before execution.
 # Confirm the actual column spelling: the original prompt also used "Locaation Code".
-WORKFLOW Check location and lead SMS:
+WORKFLOW @CHECK_LOCATION_AND_LEAD_SMS:
     USING jev as a classifier wherever possible
     USING deterministic scripts for repeatable work; pause to write them before performing that work
 
@@ -25,7 +25,7 @@ WORKFLOW Check location and lead SMS:
                 DO send an SMS with body equal to $LOCATION_CODE
             ELSE:
                 NOTE in the current spreadsheet row: Lead SMS card is missing
-                STOP THIS WORKFLOW
+                STOP @CHECK_LOCATION_AND_LEAD_SMS
         ELSE:
             NOTE in the current spreadsheet row: LOCATION SMS card is missing or not enabled
-            STOP THIS WORKFLOW
+            STOP @CHECK_LOCATION_AND_LEAD_SMS

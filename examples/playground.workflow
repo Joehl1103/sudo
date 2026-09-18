@@ -1,5 +1,5 @@
 # Change indentation, remove a colon, or misspell a keyword to try the diagnostics.
-WORKFLOW My experiment:
+WORKFLOW @MY_EXPERIMENT:
     USING plain language for actions and conditions
 
     FOR EACH $ITEM IN my list:

@@ -3,7 +3,7 @@ const { analyze, format } = require('./language');
 
 const LANGUAGE_ID = 'workflow-experiment';
 const SNIPPETS = [
-    ['WORKFLOW', 'WORKFLOW ${1:name}:\n    $0', 'Name the workflow. Its steps are indented.'],
+    ['WORKFLOW', 'WORKFLOW @${1:NAME}:\n    $0', 'Declare the file-wide workflow symbol. Its steps are indented.'],
     ['DEFINE', 'DEFINE \\$${1:NAME} AS ${2:description}', 'Give a descriptive value a reusable variable name.'],
     ['FOR EACH', 'FOR EACH \\$${1:RECORD} IN ${2:source}:\n    $0', 'Process records; the loop variable exists only inside this loop.'],
     ['WHERE', 'WHERE ${1:condition}', 'Filter records. Put this first inside FOR EACH.'],
@@ -14,7 +14,7 @@ const SNIPPETS = [
     ['USING', 'USING ${1:tool or approach}', 'Describe the tools or working approach.'],
     ['NOTE', 'NOTE ${1:destination and message}', 'Describe what should be recorded and where.'],
     ['STOP RECORD', 'STOP RECORD', 'Stop this record and continue with the next record in the nearest loop.'],
-    ['STOP THIS WORKFLOW', 'STOP THIS WORKFLOW', 'Stop the one workflow defined by this file.'],
+    ['STOP @WORKFLOW', 'STOP @${1:WORKFLOW_NAME}', 'Stop the workflow identified by its file-wide symbol.'],
 ];
 
 // Translate the shared one-based diagnostic positions to editor ranges.

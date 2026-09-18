@@ -7,7 +7,7 @@ The user wants to invent a language, even if it overlaps SudoLang. Indentation d
 3. Add highlighting, live diagnostics, completion, and document formatting. Provide the user's complete example as a non-executable document.
 4. Run core/CLI tests and an actual VS Code extension-host test. Save a local feature commit; no remote publication.
 
-Initial decisions, open to experiment: block headers end in a colon; any consistent space indentation is accepted and formatted to four spaces; tabs are errors; natural-language actions/predicates are opaque; one workflow per file. STOP must explicitly target RECORD or THIS WORKFLOW. No credentials, network calls, generated automation scripts, or external mutations from authored workflows.
+Initial decisions, open to experiment: block headers end in a colon; any consistent space indentation is accepted and formatted to four spaces; tabs are errors; natural-language actions/predicates are opaque; one workflow per file. The header declares a global `@UPPERCASE_NAME`, and downstream `@NAME` references must resolve to it. STOP must explicitly target RECORD or the declared workflow symbol. No credentials, network calls, generated automation scripts, or external mutations from authored workflows.
 
 Variables use explicit `$UPPERCASE_NAMES` (chosen 2026-09-18). `DEFINE $NAME AS description` introduces an authoring alias after that line in the current block and nested blocks. `FOR EACH $RECORD IN source:` declares a loop-scoped variable. Variables are linted but never evaluated.
 

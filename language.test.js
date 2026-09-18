@@ -6,7 +6,7 @@ const { analyze, format } = require('./language');
 
 // Keep fixtures readable: each argument corresponds to one authored source line.
 function workflow(...lines) {
-    return ['WORKFLOW Example:', ...lines].join('\n') + '\n';
+    return ['WORKFLOW @EXAMPLE:', ...lines].join('\n') + '\n';
 }
 
 function errorCodes(source) {
@@ -22,7 +22,7 @@ describe('Indentation and blocks', () => {
     test('requires a colon and an indented nonempty body', () => {
         assert.ok(errorCodes(workflow('    IF card exists', '        DO inspect')).includes('missing-colon'));
         assert.ok(errorCodes(workflow('    IF card exists:', '    DO inspect')).includes('empty-block'));
-        assert.ok(errorCodes('WORKFLOW Empty:\n    # Only a comment\n').includes('empty-block'));
+        assert.ok(errorCodes('WORKFLOW @EMPTY:\n    # Only a comment\n').includes('empty-block'));
     });
 
     test('rejects tabs, indentation under actions, and unmatched dedentation', () => {
@@ -34,7 +34,7 @@ describe('Indentation and blocks', () => {
     test('requires exactly one top-level workflow', () => {
         assert.ok(errorCodes('').includes('workflow-required'));
         assert.ok(errorCodes('DO inspect\n').includes('workflow-required'));
-        assert.ok(errorCodes('  WORKFLOW Example:\n    DO inspect\n').includes('root-indent'));
+        assert.ok(errorCodes('  WORKFLOW @EXAMPLE:\n    DO inspect\n').includes('root-indent'));
         assert.ok(errorCodes(workflow('    DO inspect') + workflow('    DO send')).includes('workflow-count'));
     });
 
@@ -63,12 +63,13 @@ describe('Workflow checks', () => {
     test('makes stop scope explicit and requires a loop for STOP RECORD', () => {
         assert.ok(errorCodes(workflow('    STOP')).includes('stop-scope'));
         assert.ok(errorCodes(workflow('    STOP WORKFLOW')).includes('stop-scope'));
+        assert.ok(errorCodes(workflow('    STOP THIS WORKFLOW')).includes('stop-scope'));
         assert.ok(errorCodes(workflow('    STOP RECORD')).includes('record-outside-loop'));
-        assert.deepEqual(errorCodes(workflow('    STOP THIS WORKFLOW')), []);
+        assert.deepEqual(errorCodes(workflow('    STOP @EXAMPLE')), []);
     });
 
     test('warns about vague conditions and directly unreachable actions', () => {
-        const source = workflow('    IF THIS IS TRUE:', '        STOP THIS WORKFLOW', '        DO send SMS');
+        const source = workflow('    IF THIS IS TRUE:', '        STOP @EXAMPLE', '        DO send SMS');
         const warnings = analyze(source).diagnostics.filter(item => item.severity === 'warning');
         assert.ok(warnings.some(item => item.code === 'vague-condition'));
         assert.ok(warnings.some(item => item.code === 'unreachable'));
@@ -82,6 +83,24 @@ describe('Workflow checks', () => {
     test('accepts the complete sample without diagnostics', () => {
         const sample = fs.readFileSync(path.join(__dirname, 'examples/location-sms.workflow'), 'utf8');
         assert.deepEqual(analyze(sample).diagnostics, []);
+    });
+});
+
+describe('Workflow symbols', () => {
+    test('links downstream references to the workflow declared by the header', () => {
+        const source = workflow('    NOTE progress on @EXAMPLE', '    STOP @EXAMPLE');
+
+        assert.deepEqual(errorCodes(source), []);
+    });
+
+    test('requires an uppercase workflow symbol and rejects unknown references', () => {
+        assert.ok(errorCodes('WORKFLOW Example:\n    DO inspect\n').includes('invalid-workflow-name'));
+        assert.ok(errorCodes('WORKFLOW @example:\n    DO inspect\n').includes('invalid-workflow-name'));
+        assert.ok(errorCodes(workflow('    DO notify @OTHER')).includes('undefined-workflow'));
+    });
+
+    test('does not mistake an email address for a workflow reference', () => {
+        assert.deepEqual(errorCodes(workflow('    DO email joseph@example.com')), []);
     });
 });
 
@@ -149,7 +168,7 @@ describe('Variables', () => {
 
 describe('Formatting preserves intent', () => {
     test('normalizes keyword case and indentation without changing prose', () => {
-        const source = 'workflow Example:\r\n  define $MESSAGE as "a  b"\r\n  if card exists:\r\n    do send $MESSAGE to https://example.com/#here  \r\n  else:\r\n    note leave Case ALONE\r\n';
+        const source = 'workflow @EXAMPLE:\r\n  define $MESSAGE as "a  b"\r\n  if card exists:\r\n    do send $MESSAGE to https://example.com/#here  \r\n  else:\r\n    note leave Case ALONE\r\n';
         const expected = workflow('    DEFINE $MESSAGE AS "a  b"', '    IF card exists:', '        DO send $MESSAGE to https://example.com/#here', '    ELSE:', '        NOTE leave Case ALONE');
         assert.equal(format(source), expected);
         assert.equal(format(expected), expected);
