@@ -1,5 +1,7 @@
 const BLOCK_KEYWORDS = new Set(['WORKFLOW', 'FOR EACH', 'IF', 'ELSE']);
-const KEYWORD_PATTERN = /^(FOR\s+EACH|WORKFLOW|USING|WHERE|DO|THEN|IF|ELSE|NOTE|STOP)(?=\s|:|$)/i;
+const KEYWORD_PATTERN = /^(FOR\s+EACH|WORKFLOW|DEFINE|USING|WHERE|DO|THEN|IF|ELSE|NOTE|STOP)(?=\s|:|$)/i;
+const VARIABLE_REFERENCE_PATTERN = /\$[A-Za-z][A-Za-z0-9_]*/g;
+const VALID_VARIABLE_NAME_PATTERN = /^\$[A-Z][A-Z0-9_]*$/;
 
 // Diagnostics use one-based positions so the CLI and editor share one contract.
 function report(diagnostics, line, code, message, severity = 'error') {
@@ -16,7 +18,7 @@ function report(diagnostics, line, code, message, severity = 'error') {
 function parseStatement(line, diagnostics) {
     const match = line.text.match(KEYWORD_PATTERN);
     if (!match) {
-        report(diagnostics, line, 'unknown-statement', 'Start with DO, THEN, IF, ELSE, FOR EACH, WHERE, USING, NOTE, or STOP.');
+        report(diagnostics, line, 'unknown-statement', 'Start with DEFINE, DO, THEN, IF, ELSE, FOR EACH, WHERE, USING, NOTE, or STOP.');
         return { ...line, keyword: '', body: line.text, block: false, children: [] };
     }
 
@@ -44,11 +46,28 @@ function parseStatement(line, diagnostics) {
         report(diagnostics, line, 'missing-text', `${keyword} needs descriptive text.`);
     }
 
-    if (keyword === 'FOR EACH') {
-        const loop = body.match(/^([A-Za-z_]\w*)\s+IN\s+(.+)$/i);
-        if (!loop) {
-            report(diagnostics, line, 'invalid-loop', 'Write FOR EACH record IN source:');
+    let declaredVariable = null;
+    let referencedText = body;
+    if (keyword === 'DEFINE') {
+        const definition = body.match(/^(\$[A-Za-z][A-Za-z0-9_]*)\s+AS\s+(.+)$/i);
+        if (!definition) {
+            report(diagnostics, line, 'invalid-definition', 'Write DEFINE $NAME AS description.');
+            referencedText = '';
         } else {
+            declaredVariable = definition[1];
+            referencedText = definition[2];
+            body = `${declaredVariable} AS ${referencedText}`;
+        }
+    }
+
+    if (keyword === 'FOR EACH') {
+        const loop = body.match(/^(\$[A-Za-z][A-Za-z0-9_]*)\s+IN\s+(.+)$/i);
+        if (!loop) {
+            report(diagnostics, line, 'invalid-loop', 'Write FOR EACH $RECORD IN source:');
+            referencedText = '';
+        } else {
+            declaredVariable = loop[1];
+            referencedText = loop[2];
             body = `${loop[1]} IN ${loop[2]}`;
         }
     }
@@ -57,7 +76,81 @@ function parseStatement(line, diagnostics) {
         report(diagnostics, line, 'vague-condition', 'Name the condition so its meaning survives edits.', 'warning');
     }
 
-    return { ...line, keyword, body, block, children: [] };
+    return { ...line, keyword, body, block, declaredVariable, referencedText, children: [] };
+}
+
+// Variable names stay visually distinct from prose and consistent across files.
+function checkVariableName(node, name, diagnostics) {
+    if (VALID_VARIABLE_NAME_PATTERN.test(name)) {
+        return true;
+    }
+
+    report(diagnostics, node, 'invalid-variable-name', `${name} must use uppercase letters, numbers, and underscores.`);
+    return false;
+}
+
+// References resolve only to earlier declarations in the current or an outer block.
+function checkVariableReferences(node, visibleVariables, diagnostics) {
+    const referencedText = node.referencedText || '';
+    const references = referencedText.match(VARIABLE_REFERENCE_PATTERN) || [];
+    const uniqueReferences = new Set(references);
+
+    for (const name of uniqueReferences) {
+        if (!checkVariableName(node, name, diagnostics)) {
+            continue;
+        }
+
+        const declaration = visibleVariables.get(name);
+        if (!declaration) {
+            report(diagnostics, node, 'undefined-variable', `${name} is not defined here. Define it earlier in this block or an outer block.`);
+            continue;
+        }
+
+        declaration.uses += 1;
+    }
+}
+
+// Declarations are unique across a workflow so the same name never changes meaning.
+function registerVariable(node, declarations, diagnostics) {
+    const name = node.declaredVariable;
+    if (!name || !checkVariableName(node, name, diagnostics)) {
+        return null;
+    }
+
+    if (declarations.has(name)) {
+        report(diagnostics, node, 'duplicate-variable', `${name} is already defined in this workflow.`);
+        return null;
+    }
+
+    const declaration = { name, node, uses: 0 };
+    declarations.set(name, declaration);
+    return declaration;
+}
+
+// Walk each ordered suite with a copy of the variables inherited from its parent.
+function checkVariables(nodes, inheritedVariables, declarations, diagnostics) {
+    const visibleVariables = new Map(inheritedVariables);
+
+    for (const node of nodes) {
+        checkVariableReferences(node, visibleVariables, diagnostics);
+
+        if (node.keyword === 'DEFINE') {
+            const declaration = registerVariable(node, declarations, diagnostics);
+            if (declaration) {
+                visibleVariables.set(declaration.name, declaration);
+            }
+        }
+
+        const childVariables = new Map(visibleVariables);
+        if (node.keyword === 'FOR EACH') {
+            const declaration = registerVariable(node, declarations, diagnostics);
+            if (declaration) {
+                childVariables.set(declaration.name, declaration);
+            }
+        }
+
+        checkVariables(node.children, childVariables, declarations, diagnostics);
+    }
 }
 
 // Attach a line to the suite selected by its indentation; never repair bad nesting.
@@ -172,6 +265,15 @@ function analyze(source) {
     } else if (workflows.length > 1) {
         report(diagnostics, workflows[1], 'workflow-count', 'Use one WORKFLOW per file.');
     }
+
+    const declarations = new Map();
+    checkVariables(roots, new Map(), declarations, diagnostics);
+    for (const declaration of declarations.values()) {
+        if (declaration.uses === 0) {
+            report(diagnostics, declaration.node, 'unused-variable', `${declaration.name} is defined but never used.`, 'warning');
+        }
+    }
+
     diagnostics.sort((first, second) => first.line - second.line || first.column - second.column);
     return { roots, lines, diagnostics };
 }

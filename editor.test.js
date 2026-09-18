@@ -51,6 +51,7 @@ async function run() {
 
         const completions = await vscode.commands.executeCommand('vscode.executeCompletionItemProvider', document.uri, new vscode.Position(1, 4));
         assert.ok(completions.items.some(item => item.label === 'IF'));
+        assert.ok(completions.items.some(item => item.label === 'DEFINE'));
         results.push('Completion offers workflow snippets.');
 
         const example = await vscode.workspace.openTextDocument(path.join(__dirname, 'examples/location-sms.workflow'));

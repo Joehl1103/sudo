@@ -15,7 +15,7 @@ function errorCodes(source) {
 
 describe('Indentation and blocks', () => {
     test('accepts nested branches and loops with arbitrary consistent space widths', () => {
-        const source = workflow('  FOR EACH record IN spreadsheet:', '    WHERE status equals waiting', '    IF card exists:', '      DO inspect it', '    ELSE:', '      STOP RECORD');
+        const source = workflow('  FOR EACH $RECORD IN spreadsheet:', '    WHERE $RECORD needs attention', '    IF the card exists:', '      DO inspect $RECORD', '    ELSE:', '      STOP RECORD');
         assert.deepEqual(errorCodes(source), []);
     });
 
@@ -51,12 +51,13 @@ describe('Workflow checks', () => {
         assert.ok(errorCodes(workflow('    THNE inspect')).includes('unknown-statement'));
         assert.ok(errorCodes(workflow('    DO')).includes('missing-text'));
         assert.ok(errorCodes(workflow('    IF :', '        DO inspect')).includes('missing-text'));
-        assert.ok(errorCodes(workflow('    FOR EACH record:', '        DO inspect')).includes('invalid-loop'));
+        assert.ok(errorCodes(workflow('    DEFINE $MESSAGE')).includes('invalid-definition'));
+        assert.ok(errorCodes(workflow('    FOR EACH record IN spreadsheet:', '        DO inspect')).includes('invalid-loop'));
     });
 
     test('requires WHERE to be the first direct statement of a loop', () => {
         assert.ok(errorCodes(workflow('    WHERE ready')).includes('where-position'));
-        assert.ok(errorCodes(workflow('    FOR EACH record IN sheet:', '        DO inspect', '        WHERE ready')).includes('where-position'));
+        assert.ok(errorCodes(workflow('    FOR EACH $RECORD IN sheet:', '        DO inspect $RECORD', '        WHERE ready')).includes('where-position'));
     });
 
     test('makes stop scope explicit and requires a loop for STOP RECORD', () => {
@@ -83,10 +84,72 @@ describe('Workflow checks', () => {
     });
 });
 
+describe('Variables', () => {
+    test('uses explicit definitions and loop variables in their enclosing scopes', () => {
+        const source = workflow(
+            '    DEFINE $SOURCE AS the records to inspect',
+            '    FOR EACH $RECORD IN $SOURCE:',
+            '        DEFINE $STATUS AS $RECORD\'s Status value',
+            '        IF $STATUS equals "Waiting":',
+            '            DO process $RECORD',
+        );
+
+        assert.deepEqual(errorCodes(source), []);
+    });
+
+    test('rejects variables used before their definition or outside their scope', () => {
+        const source = workflow(
+            '    DO send $MESSAGE',
+            '    DEFINE $MESSAGE AS the message body',
+            '    IF the message is ready:',
+            '        DEFINE $RECIPIENT AS the customer phone number',
+            '        DO send $MESSAGE to $RECIPIENT',
+            '    DO notify $RECIPIENT',
+        );
+        const undefinedVariables = analyze(source).diagnostics.filter(item => item.code === 'undefined-variable');
+
+        assert.equal(undefinedVariables.length, 2);
+        assert.equal(undefinedVariables[0].line, 2);
+        assert.equal(undefinedVariables[1].line, 7);
+    });
+
+    test('keeps a loop variable inside that loop', () => {
+        const source = workflow(
+            '    FOR EACH $ITEM IN my list:',
+            '        DO process $ITEM',
+            '    DO process $ITEM again',
+        );
+        const undefinedVariables = analyze(source).diagnostics.filter(item => item.code === 'undefined-variable');
+
+        assert.equal(undefinedVariables.length, 1);
+        assert.equal(undefinedVariables[0].line, 4);
+    });
+
+    test('rejects duplicate definitions and names that are not uppercase', () => {
+        const source = workflow(
+            '    DEFINE $MESSAGE AS the first message',
+            '    DEFINE $MESSAGE AS the replacement message',
+            '    DEFINE $recipient AS the phone number',
+            '    DO send $MESSAGE',
+        );
+        const codes = errorCodes(source);
+
+        assert.ok(codes.includes('duplicate-variable'));
+        assert.ok(codes.includes('invalid-variable-name'));
+    });
+
+    test('warns when a defined variable is never referenced', () => {
+        const source = workflow('    DEFINE $MESSAGE AS the message body', '    DO finish');
+        const warnings = analyze(source).diagnostics.filter(item => item.severity === 'warning');
+
+        assert.ok(warnings.some(item => item.code === 'unused-variable'));
+    });
+});
+
 describe('Formatting preserves intent', () => {
     test('normalizes keyword case and indentation without changing prose', () => {
-        const source = 'workflow Example:\r\n  if card exists:\r\n    do send "a  b" to https://example.com/#here  \r\n  else:\r\n    note leave Case ALONE\r\n';
-        const expected = workflow('    IF card exists:', '        DO send "a  b" to https://example.com/#here', '    ELSE:', '        NOTE leave Case ALONE');
+        const source = 'workflow Example:\r\n  define $MESSAGE as "a  b"\r\n  if card exists:\r\n    do send $MESSAGE to https://example.com/#here  \r\n  else:\r\n    note leave Case ALONE\r\n';
+        const expected = workflow('    DEFINE $MESSAGE AS "a  b"', '    IF card exists:', '        DO send $MESSAGE to https://example.com/#here', '    ELSE:', '        NOTE leave Case ALONE');
         assert.equal(format(source), expected);
         assert.equal(format(expected), expected);
     });

@@ -109,13 +109,16 @@ local function attach(buffer)
     vim.api.nvim_buf_call(buffer, function()
         vim.cmd([[
             syntax case ignore
-            syntax match WorkflowKeyword /^\s*\zs\%(WORKFLOW\|FOR\s\+EACH\|WHERE\|IF\|ELSE\|DO\|THEN\|USING\|NOTE\|STOP\)\>/
+            syntax match WorkflowKeyword /^\s*\zs\%(WORKFLOW\|FOR\s\+EACH\|DEFINE\|WHERE\|IF\|ELSE\|DO\|THEN\|USING\|NOTE\|STOP\)\>/
             syntax match WorkflowOperator /\<\%(AND\|OR\|NOT\|IN\)\>\|===\|==\|!=/
+            syntax case match
+            syntax match WorkflowVariable /\$[A-Z][A-Z0-9_]*/
             syntax region WorkflowString start=/"/ skip=/\\"/ end=/"/ oneline
             syntax match WorkflowUrl /https\?:\/\/\S\+/
             syntax match WorkflowComment /^\s*#.*/
             highlight default link WorkflowKeyword Keyword
             highlight default link WorkflowOperator Operator
+            highlight default link WorkflowVariable Identifier
             highlight default link WorkflowString String
             highlight default link WorkflowUrl Underlined
             highlight default link WorkflowComment Comment

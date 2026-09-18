@@ -2,12 +2,12 @@
 WORKFLOW My experiment:
     USING plain language for actions and conditions
 
-    FOR EACH item IN my list:
-        WHERE the item needs attention
+    FOR EACH $ITEM IN my list:
+        WHERE $ITEM needs attention
 
-        IF the item is ready:
-            DO process the item
+        IF $ITEM is ready:
+            DO process $ITEM
             THEN record the result
         ELSE:
-            NOTE why the item is not ready
+            NOTE why $ITEM is not ready
             STOP RECORD

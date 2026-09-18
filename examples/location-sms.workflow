@@ -6,21 +6,23 @@ WORKFLOW Check location and lead SMS:
     USING jev as a classifier wherever possible
     USING deterministic scripts for repeatable work; pause to write them before performing that work
 
-    FOR EACH record IN https://docs.google.com/spreadsheets/d/1KheV_zivrV3WtNxF7ELbz2LAs51sOtNfWeDGg_Isd1M/edit?gid=0#gid=0:
-        WHERE record["SMS Available"] === "No" AND record["Status"] === "Waiting on OWM"
+    FOR EACH $RECORD IN https://docs.google.com/spreadsheets/d/1KheV_zivrV3WtNxF7ELbz2LAs51sOtNfWeDGg_Isd1M/edit?gid=0#gid=0:
+        WHERE $RECORD's SMS Available value equals "No" and $RECORD's Status value equals "Waiting on OWM"
+
+        DEFINE $LOCATION_CODE AS $RECORD's Location Code value
 
         DO open https://app.hubspot.com/contacts/41356361/objects/2-53624243/views/all/list
-        THEN filter Location Code using record["Location Code"]
+        THEN filter Location Code using $LOCATION_CODE
         THEN open the matching location preview
 
         IF the LOCATION SMS card appears AND its enabled icon is visible:
             DO open https://app.hubspot.com/contacts/41356361/objects/0-136/views/72725797/board
-            THEN set the Dealer Location property to record["Location Code"]
+            THEN set the Dealer Location property to $LOCATION_CODE
             THEN refresh
             THEN open the lead sidebar
 
             IF the Lead SMS card appears:
-                DO send an SMS with body equal to the value of record["Location Code"]
+                DO send an SMS with body equal to $LOCATION_CODE
             ELSE:
                 NOTE in the current spreadsheet row: Lead SMS card is missing
                 STOP WORKFLOW

@@ -52,6 +52,12 @@ local function run()
     local syntax_name = vim.fn.synIDattr(vim.fn.synID(1, 1, 1), 'name')
     check(syntax_name == 'WorkflowKeyword', 'Highlights structural keywords')
 
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, {
+        'WORKFLOW Example:', '    DEFINE $MESSAGE AS the message body', '    DO send $MESSAGE',
+    })
+    local variable_syntax_name = vim.fn.synIDattr(vim.fn.synID(2, 12, 1), 'name')
+    check(variable_syntax_name == 'WorkflowVariable', 'Highlights variable references')
+
     -- An older in-flight lint result must never replace the newer buffer state.
     vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { 'WORKFLOW Example:', '    ELSE:', '        DO inspect' })
     vim.cmd.WorkflowLint()

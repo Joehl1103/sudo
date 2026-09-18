@@ -4,7 +4,8 @@ const { analyze, format } = require('./language');
 const LANGUAGE_ID = 'workflow-experiment';
 const SNIPPETS = [
     ['WORKFLOW', 'WORKFLOW ${1:name}:\n    $0', 'Name the workflow. Its steps are indented.'],
-    ['FOR EACH', 'FOR EACH ${1:record} IN ${2:source}:\n    $0', 'Process records; STOP RECORD leaves the current iteration of the nearest loop.'],
+    ['DEFINE', 'DEFINE \\$${1:NAME} AS ${2:description}', 'Give a descriptive value a reusable variable name.'],
+    ['FOR EACH', 'FOR EACH \\$${1:RECORD} IN ${2:source}:\n    $0', 'Process records; the loop variable exists only inside this loop.'],
     ['WHERE', 'WHERE ${1:condition}', 'Filter records. Put this first inside FOR EACH.'],
     ['IF', 'IF ${1:condition}:\n    $0', 'Indent the steps to take when the condition is true.'],
     ['ELSE', 'ELSE:\n    $0', 'Alternative branch immediately after IF, at the same indentation.'],
