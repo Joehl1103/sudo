@@ -1,0 +1,10 @@
+{
+  "comments": { "lineComment": "#" },
+  "brackets": [["[", "]"], ["(", ")"]],
+  "autoClosingPairs": [["[", "]"], ["(", ")"], ["\"", "\""]],
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*(?:(?:[Ww][Oo][Rr][Kk][Ff][Ll][Oo][Ww]|[Ff][Oo][Rr]\\s+[Ee][Aa][Cc][Hh]|[Ii][Ff])\\b.*|[Ee][Ll][Ss][Ee])\\s*:\\s*$",
+    "decreaseIndentPattern": "^\\s*[Ee][Ll][Ss][Ee]\\s*:\\s*$"
+  },
+  "folding": { "offSide": true }
+}

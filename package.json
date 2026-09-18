@@ -1,0 +1,24 @@
+{
+  "name": "workflow-language-experiment",
+  "displayName": "Workflow Language Experiment",
+  "description": "An indentation-based plain-language workflow authoring experiment.",
+  "version": "0.0.1",
+  "publisher": "local-experiments",
+  "private": true,
+  "engines": { "vscode": "^1.85.0", "node": ">=20" },
+  "main": "./extension.js",
+  "scripts": {
+    "test": "node --test language.test.js cli.test.js",
+    "lint": "node cli.js lint",
+    "format": "node cli.js format",
+    "editor": "code --new-window --extensionDevelopmentPath=. examples/location-sms.workflow"
+  },
+  "categories": ["Programming Languages", "Formatters"],
+  "contributes": {
+    "languages": [{ "id": "workflow-experiment", "aliases": ["Workflow Experiment"], "extensions": [".workflow"], "configuration": "./language-configuration.json" }],
+    "grammars": [{ "language": "workflow-experiment", "scopeName": "source.workflow-experiment", "path": "./workflow.tmLanguage.json" }],
+    "configurationDefaults": {
+      "[workflow-experiment]": { "editor.insertSpaces": true, "editor.tabSize": 4, "editor.detectIndentation": false, "editor.defaultFormatter": "local-experiments.workflow-language-experiment" }
+    }
+  }
+}
