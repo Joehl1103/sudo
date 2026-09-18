@@ -3,7 +3,7 @@ const { analyze, format } = require('./language');
 
 const LANGUAGE_ID = 'workflow-experiment';
 const SNIPPETS = [
-    ['WORKFLOW', 'WORKFLOW @${1:NAME}:\n    $0', 'Declare the file-wide workflow symbol. Its steps are indented.'],
+    ['@WORKFLOW', '@WORKFLOW:\n    $0', 'Declare the one file-wide workflow object. Its steps are indented.'],
     ['DEFINE', 'DEFINE \\$${1:NAME} AS ${2:description}', 'Give a descriptive value a reusable variable name.'],
     ['FOR EACH', 'FOR EACH \\$${1:RECORD} IN ${2:source}:\n    $0', 'Process records; the loop variable exists only inside this loop.'],
     ['WHERE', 'WHERE ${1:condition}', 'Filter records. Put this first inside FOR EACH.'],

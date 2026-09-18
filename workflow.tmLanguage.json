@@ -2,7 +2,7 @@
   "scopeName": "source.workflow-experiment",
   "patterns": [
     { "name": "comment.line.number-sign.workflow", "match": "^\\s*#.*$" },
-    { "name": "keyword.control.workflow", "match": "(?i)^\\s*(FOR\\s+EACH|WORKFLOW|DEFINE|USING|WHERE|DO|THEN|IF|ELSE|NOTE|STOP)(?=\\s|:|$)" },
+    { "name": "keyword.control.workflow", "match": "(?i)^\\s*(FOR\\s+EACH|DEFINE|USING|WHERE|DO|THEN|IF|ELSE|NOTE|STOP)(?=\\s|:|$)" },
     { "name": "entity.name.function.workflow", "match": "(?<![A-Za-z0-9._%+-])@[A-Z][A-Z0-9_]*" },
     { "name": "variable.other.workflow", "match": "\\$[A-Z][A-Z0-9_]*" },
     { "name": "markup.underline.link.workflow", "match": "https?://[^\\s]+" },

@@ -25,7 +25,7 @@ function run(...argumentsList) {
 describe('Command line authoring', () => {
     test('lints unsaved editor text from stdin as structured diagnostics', () => {
         const result = spawnSync(process.execPath, [path.join(__dirname, 'cli.js'), 'lint', '-', '--json'], {
-            input: 'WORKFLOW @EXAMPLE:\n    ELSE:\n        DO inspect\n',
+            input: '@WORKFLOW:\n    ELSE:\n        DO inspect\n',
             encoding: 'utf8',
         });
         assert.equal(result.status, 1);
@@ -36,11 +36,11 @@ describe('Command line authoring', () => {
     test('formats stdin and rejects attempts to write back to stdin', () => {
         const argumentsList = [path.join(__dirname, 'cli.js'), 'format', '-'];
         const result = spawnSync(process.execPath, argumentsList, {
-            input: 'workflow @EXAMPLE:\n  do inspect\n',
+            input: '@workflow:\n  do inspect\n',
             encoding: 'utf8',
         });
         assert.equal(result.status, 0);
-        assert.equal(result.stdout, 'WORKFLOW @EXAMPLE:\n    DO inspect\n');
+        assert.equal(result.stdout, '@WORKFLOW:\n    DO inspect\n');
         assert.equal(run('format', '-', '--write').status, 2);
     });
 
@@ -52,7 +52,7 @@ describe('Command line authoring', () => {
     });
 
     test('reports line numbers and fails lint on invalid structure', () => {
-        withFixture('WORKFLOW @EXAMPLE:\n    ELSE:\n        DO inspect\n', filename => {
+        withFixture('@WORKFLOW:\n    ELSE:\n        DO inspect\n', filename => {
             const result = run('lint', filename);
             assert.equal(result.status, 1);
             assert.match(result.stdout, /:2:5.*orphan-else/);
@@ -60,19 +60,19 @@ describe('Command line authoring', () => {
     });
 
     test('formats to stdout by default and writes only with --write', () => {
-        const original = 'workflow @EXAMPLE:\n  do inspect\n';
+        const original = '@workflow:\n  do inspect\n';
         withFixture(original, filename => {
             const preview = run('format', filename);
             assert.equal(preview.status, 0);
             assert.equal(fs.readFileSync(filename, 'utf8'), original);
-            assert.equal(preview.stdout, 'WORKFLOW @EXAMPLE:\n    DO inspect\n');
+            assert.equal(preview.stdout, '@WORKFLOW:\n    DO inspect\n');
             assert.equal(run('format', filename, '--write').status, 0);
             assert.equal(fs.readFileSync(filename, 'utf8'), preview.stdout);
         });
     });
 
     test('does not modify invalid files', () => {
-        const original = 'WORKFLOW @EXAMPLE:\n    IF ready:\n';
+        const original = '@WORKFLOW:\n    IF ready:\n';
         withFixture(original, filename => {
             assert.equal(run('format', filename, '--write').status, 1);
             assert.equal(fs.readFileSync(filename, 'utf8'), original);

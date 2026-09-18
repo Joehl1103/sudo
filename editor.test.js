@@ -25,7 +25,7 @@ async function run() {
 
         const document = await vscode.workspace.openTextDocument({
             language: 'workflow-experiment',
-            content: 'WORKFLOW @EXAMPLE:\n    ELSE:\n        DO inspect\n',
+            content: '@WORKFLOW:\n    ELSE:\n        DO inspect\n',
         });
         const editor = await vscode.window.showTextDocument(document);
         await waitFor(() => vscode.languages.getDiagnostics(document.uri).some(item => item.code === 'orphan-else'));
@@ -36,7 +36,7 @@ async function run() {
         results.push('The formatter refuses malformed indentation/structure.');
 
         await editor.edit(builder => {
-            builder.replace(new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length)), 'workflow Example:\n  do inspect\n');
+            builder.replace(new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length)), '@workflow:\n  do inspect\n');
         });
         await waitFor(() => vscode.languages.getDiagnostics(document.uri).length === 0);
         results.push('Editing the workflow clears stale diagnostics.');
@@ -46,7 +46,7 @@ async function run() {
         const workspaceEdit = new vscode.WorkspaceEdit();
         workspaceEdit.set(document.uri, edits);
         assert.equal(await vscode.workspace.applyEdit(workspaceEdit), true);
-        assert.equal(document.getText(), 'WORKFLOW @EXAMPLE:\n    DO inspect\n');
+        assert.equal(document.getText(), '@WORKFLOW:\n    DO inspect\n');
         results.push('Format Document applies canonical indentation and keywords.');
 
         const completions = await vscode.commands.executeCommand('vscode.executeCompletionItemProvider', document.uri, new vscode.Position(1, 4));
