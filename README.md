@@ -13,9 +13,34 @@ WORKFLOW Check items:
             STOP RECORD
 ```
 
-## Try it in VS Code
+## Try it in Neovim
 
-From this directory, run `npm run editor`. It opens a VS Code Extension Development Host with the local extension loaded and `examples/location-sms.workflow` open. No package installation or build is needed. This loads the extension for that window; it does not install it globally.
+From this directory, run `npm run editor`. It opens Neovim with the local plugin loaded and `examples/location-sms.workflow` open. Your Neovim configuration is not modified. Node.js 20+ and Neovim with `vim.system` (0.10+) are required; tested on Neovim 0.12.1.
+
+- Live diagnostics check unsaved edits after a 200 ms pause.
+- `:WorkflowLint` checks the current buffer immediately.
+- `:WorkflowFormat` normalizes indentation and keywords, changing the buffer without saving it.
+- `:lua vim.diagnostic.open_float()` shows the error at the cursor.
+- Syntax highlighting distinguishes structural keywords, strings, URLs, and comments.
+- Open `examples/playground.workflow` for a smaller starting point.
+
+To load it in an existing Neovim session:
+
+```vim
+:luafile /Users/josephshomefolder/development/ai-experiments/workflow-language/nvim/workflow.lua
+```
+
+The plugin supports files already open, and future `.workflow` buffers. It changes indentation settings only for workflow buffers. It uses Neovim's built-in diagnostics directly; no language-server setup or plugin-manager dependency is needed. It does not add snippets or a custom indent expression yet: indent blocks manually, then use the formatter to normalize spacing.
+
+## Optional VS Code adapter
+
+The original adapter remains available for experimentation. From the project directory:
+
+```sh
+code --new-window --extensionDevelopmentPath="$PWD" "$PWD/examples/location-sms.workflow"
+```
+
+This opens an Extension Development Host; the extension is not installed globally.
 
 - Edit either example. Errors appear as underlines and in the Problems panel.
 - Use **Format Document** (Shift+Option+F on macOS) to normalize indentation and keywords.
@@ -29,12 +54,13 @@ Node.js 20+; zero runtime dependencies.
 
 ```sh
 npm test
+npm run test:nvim
 node cli.js lint examples/location-sms.workflow
 node cli.js format examples/playground.workflow
 node cli.js format examples/playground.workflow --write
 ```
 
-Formatting prints to stdout unless `--write` is provided. Exit codes: 0 = success (warnings allowed), 1 = syntax errors, 2 = usage/filesystem error. `npm run lint -- <file>` and `npm run format -- <file>` are shortcuts.
+Formatting prints to stdout unless `--write` is provided. Use `-` as the filename to read stdin, and `lint - --json` for structured editor diagnostics. `format - --write` is rejected. Exit codes: 0 = success (warnings allowed), 1 = syntax errors, 2 = usage/filesystem error. `npm run lint -- <file>` and `npm run format -- <file>` are shortcuts.
 
 ## Syntax v0
 
@@ -64,6 +90,8 @@ The full SMS example preserves the provided workflow as a draft. Comments expose
 - `language.test.js`: intended behavior; start here when changing syntax.
 - `extension.js`: live diagnostics, formatting, and completion.
 - `cli.js` / `cli.test.js`: terminal behavior.
+- `nvim/workflow.lua` / `nvim/test.lua`: Neovim plugin and real headless editor integration tests.
+- `open-editor.js`: launches Neovim with the local plugin using absolute paths.
 - `workflow.tmLanguage.json` / `language-configuration.json`: highlighting and editor indentation.
 - `editor.test.js`: integration checks run inside VS Code's actual extension host.
 

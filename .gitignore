@@ -6,3 +6,4 @@ editor-test-results.json
 .env
 .worktrees/
 .DS_Store
+nvim.log

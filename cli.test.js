@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { editorArguments } = require('./open-editor');
 
 // Exercise the real CLI against isolated files, including failed write attempts.
 function withFixture(source, action) {
@@ -22,6 +23,34 @@ function run(...argumentsList) {
 }
 
 describe('Command line authoring', () => {
+    test('lints unsaved editor text from stdin as structured diagnostics', () => {
+        const result = spawnSync(process.execPath, [path.join(__dirname, 'cli.js'), 'lint', '-', '--json'], {
+            input: 'WORKFLOW Example:\n    ELSE:\n        DO inspect\n',
+            encoding: 'utf8',
+        });
+        assert.equal(result.status, 1);
+        const report = JSON.parse(result.stdout);
+        assert.ok(report.diagnostics.some(item => item.code === 'orphan-else' && item.line === 2));
+    });
+
+    test('formats stdin and rejects attempts to write back to stdin', () => {
+        const argumentsList = [path.join(__dirname, 'cli.js'), 'format', '-'];
+        const result = spawnSync(process.execPath, argumentsList, {
+            input: 'workflow Example:\n  do inspect\n',
+            encoding: 'utf8',
+        });
+        assert.equal(result.status, 0);
+        assert.equal(result.stdout, 'WORKFLOW Example:\n    DO inspect\n');
+        assert.equal(run('format', '-', '--write').status, 2);
+    });
+
+    test('launches the editor with absolute paths independent of its working directory', () => {
+        const argumentsList = editorArguments(__dirname);
+        assert.ok(argumentsList.includes('lua dofile(vim.env.WORKFLOW_EXPERIMENT_PLUGIN)'));
+        assert.ok(argumentsList.includes(path.join(__dirname, 'examples/location-sms.workflow')));
+        assert.ok(argumentsList.includes('-c'));
+    });
+
     test('reports line numbers and fails lint on invalid structure', () => {
         withFixture('WORKFLOW Example:\n    ELSE:\n        DO inspect\n', filename => {
             const result = run('lint', filename);
